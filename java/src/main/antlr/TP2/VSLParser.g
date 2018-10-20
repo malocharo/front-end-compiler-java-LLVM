@@ -20,9 +20,23 @@ program returns [ASD.Program out]
     ;
 
 expression returns [ASD.Expression out]
-    : l=factor PLUS r=expression  { $out = new ASD.AddExpression($l.out, $r.out); }
-    | f=factor { $out = $f.out; }
-    // TODO : that's all?
+    : r = expressionBprio{$out = $r.out;}
+    ;
+
+expressionBprio returns [ASD.Expression out]
+    : l=expressionHprio (
+        PLUS  r=expressionHprio{$l.out = new ASD.AddExpression($l.out, $r.out);}
+      | MINUS r=expressionHprio{$l.out = new ASD.SubExpression($l.out, $r.out);}
+    )*{$out = $l.out;}
+    |  r=expressionHprio{$out = $r.out;}
+    ;
+
+expressionHprio returns [ASD.Expression out]
+    : l=primary (
+        MUL r= primary{$l.out = new ASD.MulExpression($l.out, $r.out);}
+      | DIV r= primary{$l.out = new ASD.DivExpression($l.out, $r.out);}
+    )*{$out = $l.out;}
+    | r = primary {$out = $r.out;}
     ;
 
 factor returns [ASD.Expression out]

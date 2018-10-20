@@ -122,5 +122,54 @@ public class Llvm {
     }
   }
 
+  static public class Sub extends Instruction {
+    Type type;
+    String left;
+    String right;
+    String lvalue;
+
+    public Sub(Type t, String l, String r, String lvalue) {
+      this.type = t;
+      this.left = l;
+      this.right = r;
+      this.lvalue = lvalue;
+    }
+    public String toString() { return lvalue + " = sub " +type+" "+left+", "+right+"\n";}
+  }
+
+  static public class Mul extends Instruction {
+    Type type;
+    String left;
+    String right;
+    String lvalue;
+
+    public Mul(Type t, String l, String r, String lvalue) {
+      this.type = t;
+      this.left = l;
+      this.right = r;
+      this.lvalue = lvalue;
+    }
+    public String toString() {
+      return lvalue + " = mul " +type+" "+left+", "+right+"\n";
+    }
+  }
+
+  static public class Div extends Instruction {
+    Type type;
+    String left;
+    String right;
+    String lvalue;
+
+    public Div(Type t, String l, String r, String lvalue) {
+      this.type = t;
+      this.left = l;
+      this.right = r;
+      this.lvalue = lvalue;
+    }
+    public String toString() {
+      return lvalue + " = udev " +type+" "+left+", "+right+"\n";
+    }
+  }
+
   // TODO : other instructions
 }

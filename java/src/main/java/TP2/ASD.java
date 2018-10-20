@@ -54,7 +54,91 @@ public class ASD {
       }
     }
   }
+  static public class MulExpression extends Expression {
+    Expression left;
+    Expression right;
 
+    public MulExpression(Expression left, Expression right) {
+      this.left = left;
+      this.right = right;
+    }
+
+    // Pretty-printer
+    public String pp() {
+      return "(" + left.pp() + " * " + right.pp() + ")";
+    }
+
+    // IR generation
+    public RetExpression toIR() throws TypeException {
+      RetExpression leftRet = left.toIR();
+      RetExpression rightRet = right.toIR();
+
+      // We check if the types mismatches
+      if(!leftRet.type.equals(rightRet.type)) {
+        throw new TypeException("type mismatch: have " + leftRet.type + " and " + rightRet.type);
+      }
+
+      // We base our build on the left generated IR:
+      // append right code
+      leftRet.ir.append(rightRet.ir);
+
+      // allocate a new identifier for the result
+      String result = Utils.newtmp();
+
+      // new add instruction result = left + right
+      Llvm.Instruction mul = new Llvm.Mul(leftRet.type.toLlvmType(), leftRet.result, rightRet.result, result);
+
+      // append this instruction
+      leftRet.ir.appendCode(mul);
+
+      // return the generated IR, plus the type of this expression
+      // and where to find its result
+      return new RetExpression(leftRet.ir, leftRet.type, result);
+    }
+  }
+
+  static public class DivExpression extends Expression {
+    Expression left;
+    Expression right;
+
+    public DivExpression(Expression left, Expression right) {
+      this.left = left;
+      this.right = right;
+    }
+
+    // Pretty-printer
+    public String pp() {
+      return "(" + left.pp() + " * " + right.pp() + ")";
+    }
+
+    // IR generation
+    public RetExpression toIR() throws TypeException {
+      RetExpression leftRet = left.toIR();
+      RetExpression rightRet = right.toIR();
+
+      // We check if the types mismatches
+      if(!leftRet.type.equals(rightRet.type)) {
+        throw new TypeException("type mismatch: have " + leftRet.type + " and " + rightRet.type);
+      }
+
+      // We base our build on the left generated IR:
+      // append right code
+      leftRet.ir.append(rightRet.ir);
+
+      // allocate a new identifier for the result
+      String result = Utils.newtmp();
+
+      // new add instruction result = left + right
+      Llvm.Instruction div = new Llvm.Div(leftRet.type.toLlvmType(), leftRet.result, rightRet.result, result);
+
+      // append this instruction
+      leftRet.ir.appendCode(div);
+
+      // return the generated IR, plus the type of this expression
+      // and where to find its result
+      return new RetExpression(leftRet.ir, leftRet.type, result);
+    }
+  }
 
   // Concrete class for Expression: add case
   static public class AddExpression extends Expression {
@@ -98,6 +182,48 @@ public class ASD {
       // and where to find its result
       return new RetExpression(leftRet.ir, leftRet.type, result);
     }
+  }
+
+  static public class SubExpression extends Expression {
+    Expression left;
+    Expression right;
+
+    public SubExpression(Expression l, Expression r) {
+      this.left = l;
+      this.right = r;
+    }
+    public String pp() {
+      return "(" + this.left + " - " + this.right + ")";
+    }
+
+    // IR generation
+    public RetExpression toIR() throws TypeException {
+      RetExpression leftRet = left.toIR();
+      RetExpression rightRet = right.toIR();
+
+      // We check if the types mismatches
+      if(!leftRet.type.equals(rightRet.type)) {
+        throw new TypeException("type mismatch: have " + leftRet.type + " and " + rightRet.type);
+      }
+
+      // We base our build on the left generated IR:
+      // append right code
+      leftRet.ir.append(rightRet.ir);
+
+      // allocate a new identifier for the result
+      String result = Utils.newtmp();
+
+      // new add instruction result = left + right
+      Llvm.Instruction sub = new Llvm.Sub(leftRet.type.toLlvmType(), leftRet.result, rightRet.result, result);
+
+      // append this instruction
+      leftRet.ir.appendCode(sub);
+
+      // return the generated IR, plus the type of this expression
+      // and where to find its result
+      return new RetExpression(leftRet.ir, leftRet.type, result);
+    }
+
   }
 
   // Concrete class for Expression: constant (integer) case
