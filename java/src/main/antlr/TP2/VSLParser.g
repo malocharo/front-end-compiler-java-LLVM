@@ -16,7 +16,7 @@ options {
 // TODO : other rules
 
 program returns [ASD.Program out]
-    : e=expression EOF { $out = new ASD.Program($e.out); } // TODO : change when you extend the language
+    : e=block EOF { $out = new ASD.Program($e.out); } // TODO : change when you extend the language
     ;
 
 expression returns [ASD.Expression out]
@@ -32,19 +32,37 @@ expressionBprio returns [ASD.Expression out]
     ;
 
 expressionHprio returns [ASD.Expression out]
-    : l=primary (
-        MUL r= primary{$l.out = new ASD.MulExpression($l.out, $r.out);}
-      | DIV r= primary{$l.out = new ASD.DivExpression($l.out, $r.out);}
+    : l=prim (
+        MUL r= prim{$l.out = new ASD.MulExpression($l.out, $r.out);}
+      | DIV r= prim{$l.out = new ASD.DivExpression($l.out, $r.out);}
     )*{$out = $l.out;}
-    | r = primary {$out = $r.out;}
+    | r = prim {$out = $r.out;}
+    ;
+
+instruction returns [ASD.Instruction out]
+    : IDENT AFF e = expression { $out = new ASD.AffInstruction($e.out, $IDENT.text); }
+    ;
+
+block returns [ASD.Block out]
+    : DBK { List<ASD.VarDecla> varList = null; List<ASD.Instruction> instList = new ArrayList<>();}
+    (v = varDecla {varList = $v.out;})?
+    (i = instruction {instList.add($i.out);})*
+    FBK { $out = new ASD.Block(varList, instList); }
     ;
 
 factor returns [ASD.Expression out]
-    : p=primary { $out = $p.out; }
+    : p=prim { $out = $p.out; }
     // TODO : that's all?
     ;
 
-primary returns [ASD.Expression out]
+prim returns [ASD.Expression out]
     : INTEGER { $out = new ASD.IntegerExpression($INTEGER.int); }
+    | IDENT   { $out = new ASD.IdExpression(new ASD.Int(), $IDENT.text);}
     // TODO : that's all?
+    ;
+varDecla returns [List<ASD.VarDecla> out]
+    : INT {List<ASD.VarDecla> varList = new ArrayList<>();}
+    (IDENT {varList.add(new ASD.VarDecla(new ASD.Int(), $IDENT.text)); } COMA)*
+    IDENT  {varList.add(new ASD.VarDecla(new ASD.Int(), $IDENT.text)); }
+    { $out = varList; }
     ;

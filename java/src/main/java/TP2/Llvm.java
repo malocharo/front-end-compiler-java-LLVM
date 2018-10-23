@@ -171,5 +171,80 @@ public class Llvm {
     }
   }
 
+  static public class Aff extends Instruction {
+    Type type;
+    String val;
+    String id;
+
+    public Aff(Type type, String val, String id) {
+      this.type = type;
+      this.val = val;
+      this.id = id;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      return "store "+type+" "+val+", "+type+"* %"+id+"\n";
+
+    }
+  }
+
+  // load <=> affecter une valeur contenu dans la memoire dans une variable
+  /*%ptr = alloca i32                              ; yields i32*:ptr
+   store i32 3, i32* %ptr                          ; yields void
+   %val = load i32, i32* %ptr                      ; yields i32:val = i32 3
+  */
+
+  static public class Load extends Instruction {
+    Type type;
+    String id;
+    String tmp;
+
+    public Load(Type t, String id, String tmp) {
+      this.id = id;
+      this.type = t;
+      this.tmp = tmp;
+    }
+
+    @Override
+    public String toString() {
+      return  tmp + "= load "+type+", "+type+"* %"+id+"\n";
+    }
+  }
+
+  static public class VarDeclaration extends Instruction {
+    String id;
+    Type type;
+
+    public VarDeclaration(Type t, String s) {
+      this.id = id;
+      this.type = t;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      return "%"+id+" = alloca "+type+"\n";
+    }
+  }
+
+  static public class debBlock extends Instruction {
+    public debBlock(){
+
+    }
+
+    @java.lang.Override
+    public String toString() {
+      return "{";
+    }
+  }
+
+  static public class finBlock extends Instruction {
+    public finBlock(){}
+
+    @java.lang.Override
+    public String toString() {
+      return "}";
+    }
+  }
   // TODO : other instructions
 }

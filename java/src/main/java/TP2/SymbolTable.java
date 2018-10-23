@@ -15,6 +15,10 @@ public class SymbolTable {
   // Define different symbols
   public static abstract class Symbol {
     String ident; // minimum, used in the storage map
+
+    public String toString() {
+      return ident;
+    }
   }
 
   public static class VariableSymbol extends Symbol {

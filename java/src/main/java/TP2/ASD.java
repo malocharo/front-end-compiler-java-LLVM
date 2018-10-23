@@ -6,28 +6,64 @@ import java.util.stream.Collectors;
 
 public class ASD {
   static public class Program {
-    Expression e; // What a program contains. TODO : change when you extend the language
+    Block e; // What a program contains. TODO : change when you extend the language
 
-    public Program(Expression e) {
+    public Program(Block e) {
       this.e = e;
     }
 
+
     // Pretty-printer
     public String pp() {
-      return e.pp();
+
+        return e.pp();
+
     }
 
     // IR generation
     public Llvm.IR toIR() throws TypeException {
-      // TODO : change when you extend the language
+        // TODO : change when you extend the language
 
-      // computes the IR of the expression
-      Expression.RetExpression retExpr = e.toIR();
-      // add a return instruction
-      Llvm.Instruction ret = new Llvm.Return(retExpr.type.toLlvmType(), retExpr.result);
-      retExpr.ir.appendCode(ret);
+        // computes the IR of the expression
+        //Expression.RetExpression retExpr = e.toIR();
+        // add a return instruction
+        //Llvm.Instruction ret = new Llvm.Return(retExpr.type.toLlvmType(), retExpr.result);
+        //retExpr.ir.appendCode(ret);
 
-      return retExpr.ir;
+        //return retExpr.ir;
+        return e.toIr().ir;
+
+    }
+  }
+  static public abstract class Declaration {
+    public abstract String pp();
+    public abstract RetDeclaration toIR() throws TypeException;
+
+    static public class RetDeclaration {
+      public Llvm.IR ir;
+      public RetDeclaration(Llvm.IR ir) {
+        this.ir = ir;
+      }
+    }
+  }
+  static public class VarDecla extends Declaration {
+    public String id;
+    public Type type;
+
+    public VarDecla(Type t, String i) {
+      this.type = t;
+      this.id = i;
+    }
+
+    public String pp() {
+      return this.id;
+    }
+
+    public RetDeclaration toIR() throws TypeException {
+      Llvm.IR irVarDecla = new Llvm.IR(Llvm.empty(),Llvm.empty());
+      Llvm.Instruction isVarDecla = new Llvm.VarDeclaration(type.toLlvmType(), id);
+      irVarDecla.appendCode(isVarDecla);
+      return new RetDeclaration(irVarDecla);
     }
   }
 
@@ -244,6 +280,117 @@ public class ASD {
     }
   }
 
+  static public class IdExpression extends Expression {
+    Type type;
+    String id;
+
+    public IdExpression(Type t, String s) {
+      this.type = t;
+      this.id = s;
+    }
+
+    public String pp() {
+      return this.id;
+    }
+
+    @Override
+    public RetExpression toIR() {
+      Llvm.IR irId = new Llvm.IR(Llvm.empty(), Llvm.empty());
+      String tmp = Utils.newtmp();
+      Llvm.Instruction idExpr = new Llvm.Load(type.toLlvmType(), id, tmp);
+      irId.appendCode(idExpr);
+      return new RetExpression(irId,type,tmp);
+
+    }
+  }
+  static public abstract class Instruction {
+    public abstract String pp();
+    public abstract RetInstruction toIr() throws TypeException;
+
+    static public class RetInstruction {
+      public Llvm.IR ir;
+
+      public Type type;
+      public String res;
+
+      public RetInstruction(Llvm.IR ir, Type type, String res) {
+        this.ir = ir;
+        this.type = type;
+        this.res = res;
+      }
+    }
+  }
+
+
+  static public class AffInstruction extends Instruction {
+    Type type;
+    String id;
+    Expression expr;
+
+    public AffInstruction(Expression expr, String id) {
+      this.expr = expr;
+      this.id = id;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      return id+" := " +expr.pp();
+    }
+
+    public RetInstruction toIr() throws TypeException {
+      Expression.RetExpression exprNew = this.expr.toIR();
+      Llvm.Instruction aff = new Llvm.Aff(exprNew.type.toLlvmType(),exprNew.result,id);
+      exprNew.ir.appendCode(aff);
+      return new RetInstruction(exprNew.ir,exprNew.type,id);
+    }
+  }
+
+ static public class Block extends Instruction {
+    List<VarDecla> varList;
+    List<Instruction> instList;
+
+    public Block(List<VarDecla> v, List<Instruction> i) {
+      this.varList = v;
+      this.instList = i;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      String s ="{";
+      for(VarDecla v : varList)
+        s += v.pp();
+      for(Instruction i : instList)
+        s += i.pp();
+      s +="}";
+      return s;
+    }
+
+    @java.lang.Override
+    public RetInstruction toIr() throws TypeException {
+      Llvm.IR irBlock = new Llvm.IR(Llvm.empty(),Llvm.empty());
+
+      Llvm.Instruction db = new Llvm.debBlock();
+      irBlock.appendCode(db);
+
+      for(VarDecla v : varList) {
+        Declaration.RetDeclaration retVar = v.toIR();
+        irBlock.append(retVar.ir);
+      }
+
+      for(Instruction i : instList){
+        Instruction.RetInstruction retInst = i.toIr();
+        irBlock.append(retInst.ir);
+
+      }
+
+      Llvm.Instruction fb = new Llvm.finBlock();
+      irBlock.appendCode(fb);
+
+      return new RetInstruction(irBlock,null,null);
+
+
+    }
+  }
   // Warning: this is the type from VSL+, not the LLVM types!
   static public abstract class Type {
     public abstract String pp();
