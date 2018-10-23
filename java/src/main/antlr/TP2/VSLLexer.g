@@ -30,6 +30,7 @@ INT   : 'INT';
 COMA  : ',' ;
 DBK   : '{' ;
 FBK   : '}' ;
+RET   : 'RETURN';
 // TODO : other keywords
 
 // other tokens (no conflict with keywords in VSL)

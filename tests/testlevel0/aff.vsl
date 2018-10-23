@@ -1,1 +1,5 @@
-n := 2
+{
+INT n
+n := 2+2
+RETURN n
+}

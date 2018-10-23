@@ -344,6 +344,29 @@ public class ASD {
       return new RetInstruction(exprNew.ir,exprNew.type,id);
     }
   }
+  static public class Ret extends Instruction {
+    Expression expr;
+    Type type;
+
+    public Ret( Type t, Expression e) {
+      this.expr = e;
+      this.type = t;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      return "RETURN "+type.pp()+" "+expr.pp();
+    }
+
+    @java.lang.Override
+    public RetInstruction toIr() throws TypeException {
+      Expression.RetExpression newExpr = this.expr.toIR();
+      Llvm.Return retu = new Llvm.Return(this.type.toLlvmType(),newExpr.result);
+      newExpr.ir.appendCode(retu);
+      return new RetInstruction(newExpr.ir,this.type,newExpr.result);
+
+    }
+  }
 
  static public class Block extends Instruction {
     List<VarDecla> varList;

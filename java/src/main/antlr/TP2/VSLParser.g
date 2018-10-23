@@ -41,6 +41,7 @@ expressionHprio returns [ASD.Expression out]
 
 instruction returns [ASD.Instruction out]
     : IDENT AFF e = expression { $out = new ASD.AffInstruction($e.out, $IDENT.text); }
+    | RET e = expression { $out = new ASD.Ret(new ASD.Int(),$e.out);}
     ;
 
 block returns [ASD.Block out]
