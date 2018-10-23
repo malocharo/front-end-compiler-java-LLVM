@@ -46,7 +46,7 @@ instruction returns [ASD.Instruction out]
 
 block returns [ASD.Block out]
     : DBK { List<ASD.VarDecla> varList = null; List<ASD.Instruction> instList = new ArrayList<>();}
-    (v = varDecla {varList = $v.out;})?
+    (v = varDecla {varList = $v.out;})*
     (i = instruction {instList.add($i.out);})*
     FBK { $out = new ASD.Block(varList, instList); }
     ;

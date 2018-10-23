@@ -395,9 +395,11 @@ public class ASD {
       Llvm.Instruction db = new Llvm.debBlock();
       irBlock.appendCode(db);
 
-      for(VarDecla v : varList) {
-        Declaration.RetDeclaration retVar = v.toIR();
-        irBlock.append(retVar.ir);
+      if(varList != null) {
+        for (VarDecla v : varList) {
+          Declaration.RetDeclaration retVar = v.toIR();
+          irBlock.append(retVar.ir);
+        }
       }
 
       for(Instruction i : instList){
