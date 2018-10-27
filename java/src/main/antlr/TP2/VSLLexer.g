@@ -31,6 +31,11 @@ COMA  : ',' ;
 DBK   : '{' ;
 FBK   : '}' ;
 RET   : 'RETURN';
+NOT   : 'NOT';
+IF    : 'IF';
+THEN  : 'THEN';
+ELSE  : 'ELSE';
+FI    : 'FI';
 // TODO : other keywords
 
 // other tokens (no conflict with keywords in VSL)

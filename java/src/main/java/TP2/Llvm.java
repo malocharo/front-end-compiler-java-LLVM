@@ -246,5 +246,29 @@ public class Llvm {
       return "}\n";
     }
   }
+
+  static public class Cond extends Instruction {
+    Type type;
+    String res;
+    Boolean b;
+    String tmp;
+
+    public Cond(Type t,String r, Boolean b,String tmp) {
+      this.type = t;
+      this.res = r;
+      this.b = b;
+      this.tmp = tmp;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      String test = new String();
+      if(b)
+        test = "eq";
+      else
+        test = "ne";
+      return tmp +" = icmp " + test + " " + type + " " +res +", 0\n";
+    }
+  }
   // TODO : other instructions
 }

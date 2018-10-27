@@ -42,11 +42,20 @@ expressionHprio returns [ASD.Expression out]
 instruction returns [ASD.Instruction out]
     : IDENT AFF e = expression { $out = new ASD.AffInstruction($e.out, $IDENT.text); }
     | RET e = expression { $out = new ASD.Ret(new ASD.Int(),$e.out);}
+    | IF c = condition
+    THEN i = instruction
+    (ELSE ie = instruction)?
+    FI {$out = new ASD.IfThenElse($c.out,$i.out,$ie.out);}
+    ;
+
+condition returns [ASD.Condition out]
+    :{boolean t = false;}
+     (NOT {t = !t;} )? e = expression { $out = new ASD.Condition($e.out,t);}
     ;
 
 block returns [ASD.Block out]
     : DBK { List<ASD.VarDecla> varList = null; List<ASD.Instruction> instList = new ArrayList<>();}
-    (v = varDecla {varList = $v.out;})*
+    (v = varDecla {varList = $v.out;})?
     (i = instruction {instList.add($i.out);})*
     FBK { $out = new ASD.Block(varList, instList); }
     ;

@@ -303,6 +303,32 @@ public class ASD {
 
     }
   }
+
+  static public class Condition extends Expression {
+    Expression expr;
+    boolean b;
+    public Condition(Expression e, boolean b) {
+      this.b = b;
+      this.expr = e;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      if(b)
+        return this.expr.pp();
+      return "NOT "+this.expr.pp();
+
+    }
+
+    @java.lang.Override
+    public TP2.ASD.Expression.RetExpression toIR() throws TypeException {
+      Expression.RetExpression retCond = this.expr.toIR();
+      String tmp = Utils.newtmp();
+      Llvm.Instruction instCond = new Llvm.Cond(retCond.type.toLlvmType(),retCond.result,b,tmp);
+      retCond.ir.appendCode(instCond);
+      return new RetExpression(retCond.ir,retCond.type,retCond.result);
+    }
+  }
   static public abstract class Instruction {
     public abstract String pp();
     public abstract RetInstruction toIr() throws TypeException;
