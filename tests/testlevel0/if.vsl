@@ -1,0 +1,10 @@
+{
+INT a,b
+b :=1
+IF b
+THEN
+a := 2
+FI
+
+
+}

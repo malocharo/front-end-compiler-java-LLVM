@@ -442,6 +442,75 @@ public class ASD {
 
     }
   }
+
+  static public class IfThenElse extends Instruction {
+    Condition cond;
+    Instruction thenInst;
+    Instruction elseInst;
+
+    public IfThenElse(Condition c, Instruction t, Instruction e) {
+      this.cond = c;
+      this.thenInst = t;
+      this.elseInst = e;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      String s = "IF "+this.cond.pp()+"THEN\n";
+      s += this.thenInst.pp();
+
+      if(this.elseInst != null) {
+        s += "ELSE\n" + this.elseInst.pp();
+      }
+
+      s += "FI\n";
+      return s;
+    }
+
+    @java.lang.Override
+    public TP2.ASD.Instruction.RetInstruction toIr() throws TypeException {
+      Llvm.IR ifIR = new Llvm.IR(Llvm.empty(),Llvm.empty());
+
+      //label ie %then7 %else8
+      String then_lab = Utils.newlab("then");
+      String fi_lab = Utils.newlab("fi");
+      String else_lab = null;
+
+      Llvm.Instruction then_lab_inst = new Llvm.Label(then_lab);
+      Llvm.Instruction fi_lab_inst = new Llvm.Label(fi_lab);
+      Llvm.Instruction else_lab_inst = null;
+
+      Instruction.RetInstruction then_ret = this.thenInst.toIr();
+      Instruction.RetInstruction else_ret = null;
+      Expression.RetExpression cond_ret = this.cond.toIR();
+
+      if(this.elseInst != null) {
+        else_lab = Utils.newlab("else");
+        else_lab_inst = new Llvm.Label(else_lab);
+        else_ret = this.elseInst.toIr();
+      }
+
+      // goto
+      Llvm.Instruction goto_fi = new Llvm.Goto(fi_lab);
+      Llvm.Instruction jump = new Llvm.IfThenElse(cond_ret.result,then_lab,else_lab,fi_lab);
+
+      ifIR.append(cond_ret.ir);
+      ifIR.appendCode(jump);
+      ifIR.appendCode(then_lab_inst);
+      ifIR.append(then_ret.ir); //might already hold a ret instruction
+      ifIR.appendCode(goto_fi); //this could be useless but idk how to optimize it
+
+      if(this.elseInst != null) {
+        ifIR.appendCode(else_lab_inst);
+        ifIR.append(else_ret.ir);
+        ifIR.appendCode(goto_fi);
+      }
+
+      ifIR.appendCode(fi_lab_inst);
+
+      return new RetInstruction(ifIR,null,null);
+    }
+  }
   // Warning: this is the type from VSL+, not the LLVM types!
   static public abstract class Type {
     public abstract String pp();

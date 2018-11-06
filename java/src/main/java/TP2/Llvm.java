@@ -167,7 +167,7 @@ public class Llvm {
       this.lvalue = lvalue;
     }
     public String toString() {
-      return lvalue + " = udev " +type+" "+left+", "+right+"\n";
+      return lvalue + " = udiv " +type+" "+left+", "+right+"\n";
     }
   }
 
@@ -268,6 +268,54 @@ public class Llvm {
       else
         test = "ne";
       return tmp +" = icmp " + test + " " + type + " " +res +", 0\n";
+    }
+  }
+
+  static public class Label extends Instruction {
+    String label;
+
+    public Label(String s) {
+      this.label = s;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      return "\n" + this.label + ":\n";
+    }
+  }
+
+  static public class Goto extends Instruction {
+    String label;
+
+    public Goto(String s) {
+      this.label = s;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      return "br label %"+label+"\n";
+    }
+  }
+
+  static public class IfThenElse extends Instruction {
+    String thenLab;
+    String elseLab;
+    String fiLab;
+    String condRes;
+
+    public IfThenElse(String c, String t, String e, String f) {
+      this.condRes = c;
+      this.thenLab = t;
+      this.elseLab = e;
+      this.fiLab = f;
+    }
+
+    @java.lang.Override
+    public String toString() {
+      if(this.elseLab == null)
+        return "br i1 "+this.condRes + ", label %"+ this.thenLab + ", label %" +this.fiLab +"\n";
+      return "br i1 " +this.condRes + ", label %"+this.thenLab + ", label %" +this.elseLab +"\n";
+
     }
   }
   // TODO : other instructions

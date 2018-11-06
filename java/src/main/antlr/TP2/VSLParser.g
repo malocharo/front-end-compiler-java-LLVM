@@ -42,10 +42,11 @@ expressionHprio returns [ASD.Expression out]
 instruction returns [ASD.Instruction out]
     : IDENT AFF e = expression { $out = new ASD.AffInstruction($e.out, $IDENT.text); }
     | RET e = expression { $out = new ASD.Ret(new ASD.Int(),$e.out);}
-    | IF c = condition
+    | {ASD.Instruction elseM = null;}
+    IF c = condition
     THEN i = instruction
-    (ELSE ie = instruction)?
-    FI {$out = new ASD.IfThenElse($c.out,$i.out,$ie.out);}
+    (ELSE ie = instruction {elseM = $ie.out;})?
+    FI {$out = new ASD.IfThenElse($c.out,$i.out,elseM);}
     ;
 
 condition returns [ASD.Condition out]
@@ -68,6 +69,7 @@ factor returns [ASD.Expression out]
 prim returns [ASD.Expression out]
     : INTEGER { $out = new ASD.IntegerExpression($INTEGER.int); }
     | IDENT   { $out = new ASD.IdExpression(new ASD.Int(), $IDENT.text);}
+    | LP e = expression RP {$out = $e.out;}
     // TODO : that's all?
     ;
 varDecla returns [List<ASD.VarDecla> out]
