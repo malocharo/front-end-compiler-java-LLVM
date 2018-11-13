@@ -27,6 +27,7 @@ MUL   : '*' ;
 DIV   : '/' ;
 AFF   : ':=';
 INT   : 'INT';
+VOID  : 'VOID';
 COMA  : ',' ;
 DBK   : '{' ;
 FBK   : '}' ;
@@ -36,6 +37,11 @@ IF    : 'IF';
 THEN  : 'THEN';
 ELSE  : 'ELSE';
 FI    : 'FI';
+WHILE : 'WHILE';
+DO    : 'DO';
+DONE  : 'DONE';
+PROTO : 'PROTO';
+FUNC  : 'FUNC';
 // TODO : other keywords
 
 // other tokens (no conflict with keywords in VSL)

@@ -1,10 +1,14 @@
-{
-INT a,b
-b :=1
+FUNC INT main(){
+INT a,b,c
+b := 1
+c := 3
 IF b
 THEN
 a := 2
+c := 1
+ELSE
+a := 3
 FI
-
+RETURN a + c
 
 }

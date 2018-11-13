@@ -52,7 +52,7 @@ public class Llvm {
 
       // We create the function main
       // TODO : remove this when you extend the language
-      r.append("define i32 @main() \n");
+      //r.append("define i32 @main() \n");
 
 
       for(Instruction inst: code)
@@ -80,6 +80,14 @@ public class Llvm {
     public String toString() {
       return "i32";
     }
+  }
+
+  static public class Void extends Type {
+    @java.lang.Override
+    public String toString() {
+      return "void";
+    }
+
   }
 
   // TODO : other types
@@ -316,6 +324,30 @@ public class Llvm {
         return "br i1 "+this.condRes + ", label %"+ this.thenLab + ", label %" +this.fiLab +"\n";
       return "br i1 " +this.condRes + ", label %"+this.thenLab + ", label %" +this.elseLab +"\n";
 
+    }
+  }
+
+  static public class FuncImpl extends Instruction {
+    Type type;
+    String id;
+    String expr;
+    Type type_expr;
+    public FuncImpl(Type t, String id, String e, Type te) {
+      this.type = t;
+      this.id = id;
+      this.expr = e;
+      this.type_expr = te;
+
+    }
+    @java.lang.Override
+    public String toString() {
+      String s ="";
+      s = "define "+ type + " @"+id;
+      if(this.expr != null)
+        s += "("+type_expr+" "+expr+")\n";
+      else
+        s += "()\n";
+      return s;
     }
   }
   // TODO : other instructions

@@ -6,9 +6,9 @@ import java.util.stream.Collectors;
 
 public class ASD {
   static public class Program {
-    Block e; // What a program contains. TODO : change when you extend the language
+    Func e; // What a program contains. TODO : change when you extend the language
 
-    public Program(Block e) {
+    public Program(Func e) {
       this.e = e;
     }
 
@@ -31,7 +31,7 @@ public class ASD {
         //retExpr.ir.appendCode(ret);
 
         //return retExpr.ir;
-        return e.toIr().ir;
+        return e.toIR().ir;
 
     }
   }
@@ -326,7 +326,7 @@ public class ASD {
       String tmp = Utils.newtmp();
       Llvm.Instruction instCond = new Llvm.Cond(retCond.type.toLlvmType(),retCond.result,b,tmp);
       retCond.ir.appendCode(instCond);
-      return new RetExpression(retCond.ir,retCond.type,retCond.result);
+      return new RetExpression(retCond.ir,retCond.type,tmp);
     }
   }
   static public abstract class Instruction {
@@ -445,10 +445,10 @@ public class ASD {
 
   static public class IfThenElse extends Instruction {
     Condition cond;
-    Instruction thenInst;
-    Instruction elseInst;
+    List<Instruction> thenInst;
+    List<Instruction> elseInst;
 
-    public IfThenElse(Condition c, Instruction t, Instruction e) {
+    public IfThenElse(Condition c, List<Instruction> t, List<Instruction> e) {
       this.cond = c;
       this.thenInst = t;
       this.elseInst = e;
@@ -456,14 +456,17 @@ public class ASD {
 
     @java.lang.Override
     public String pp() {
-      String s = "IF "+this.cond.pp()+"THEN\n";
-      s += this.thenInst.pp();
+      String s = "IF "+this.cond.pp()+"\nTHEN\n";
+      for(Instruction i : thenInst)
+      s += i.pp();
 
       if(this.elseInst != null) {
-        s += "ELSE\n" + this.elseInst.pp();
+        s += "\nELSE\n";
+        for(Instruction i : elseInst)
+         s+= i.pp();
       }
 
-      s += "FI\n";
+      s += "\nFI\n";
       return s;
     }
 
@@ -480,14 +483,12 @@ public class ASD {
       Llvm.Instruction fi_lab_inst = new Llvm.Label(fi_lab);
       Llvm.Instruction else_lab_inst = null;
 
-      Instruction.RetInstruction then_ret = this.thenInst.toIr();
-      Instruction.RetInstruction else_ret = null;
+
       Expression.RetExpression cond_ret = this.cond.toIR();
 
       if(this.elseInst != null) {
         else_lab = Utils.newlab("else");
         else_lab_inst = new Llvm.Label(else_lab);
-        else_ret = this.elseInst.toIr();
       }
 
       // goto
@@ -497,18 +498,167 @@ public class ASD {
       ifIR.append(cond_ret.ir);
       ifIR.appendCode(jump);
       ifIR.appendCode(then_lab_inst);
-      ifIR.append(then_ret.ir); //might already hold a ret instruction
+      for(Instruction i : thenInst) {
+        Instruction.RetInstruction thenInstRet = i.toIr();
+        ifIR.append(thenInstRet.ir);
+      }
       ifIR.appendCode(goto_fi); //this could be useless but idk how to optimize it
 
       if(this.elseInst != null) {
         ifIR.appendCode(else_lab_inst);
-        ifIR.append(else_ret.ir);
+        for(Instruction i : elseInst) {
+          Instruction.RetInstruction elseInstRet = i.toIr();
+          ifIR.append(elseInstRet.ir);
+        }
         ifIR.appendCode(goto_fi);
       }
 
       ifIR.appendCode(fi_lab_inst);
 
       return new RetInstruction(ifIR,null,null);
+    }
+  }
+
+  static public class While extends Instruction  {
+    Condition cond;
+    List<Instruction> instList;
+
+    public While(Condition c, List<Instruction> l) {
+      this.cond = c;
+      this.instList = l;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      String s = "WHILE" + this.cond.pp() + "\nDO\n{\n";
+      for(Instruction i : instList)
+        s += i.pp();
+      s += "\n}\nDONE\n";
+      return s;
+    }
+
+    @java.lang.Override
+    public TP2.ASD.Instruction.RetInstruction toIr() throws TypeException {
+      Llvm.IR whileIR = new Llvm.IR(Llvm.empty(),Llvm.empty());
+
+      //label ie %do6 %done7
+
+      String do_label = Utils.newlab("do");
+      String done_label = Utils.newlab("done");
+      String while_label = Utils.newlab("while");
+
+      Llvm.Instruction while_lab_inst = new  Llvm.Label(while_label);
+      Llvm.Instruction do_label_inst = new Llvm.Label(do_label);
+      Llvm.Instruction done_label_inst = new Llvm.Label(done_label);
+
+
+      Expression.RetExpression cond_ret = this.cond.toIR();
+
+      Llvm.Instruction goto_while = new Llvm.Goto(while_label);
+      Llvm.Instruction jump = new  Llvm.IfThenElse(cond_ret.result,do_label,done_label,while_label);
+
+      whileIR.appendCode(goto_while);
+      whileIR.appendCode(while_lab_inst);
+      whileIR.append(cond_ret.ir);
+      whileIR.appendCode(jump);
+      whileIR.appendCode(do_label_inst);
+      for(Instruction i : this.instList) {
+        Instruction.RetInstruction retInst = i.toIr();
+        whileIR.append(retInst.ir);
+      }
+      whileIR.appendCode(goto_while);
+      whileIR.appendCode(done_label_inst);
+
+      return new RetInstruction(whileIR,null,null);
+    }
+  }
+
+  static public abstract class Function {
+    public abstract String pp();
+    public abstract RetFunction toIR() throws TypeException;
+
+    static public class RetFunction {
+      public Llvm.IR ir;
+      public Type type;
+      public String res;
+
+      public RetFunction(Llvm.IR ir, Type t, String r) {
+        this.ir = ir;
+        this.type = t;
+        this.res = r;
+      }
+
+    }
+  }
+
+  static public class Proto extends Function {
+    public Type type;
+    public String id;
+    public Expression expr;
+
+    public Proto(Type t, String s,Expression e) {
+      this.type = t;
+      this.id = s;
+      this.expr = e;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      String s ="";
+      if(this.expr != null)
+        s = "PROTO " + type.pp() + " " + id + "("+this.expr.pp()+")\n";
+      else
+        s = "PROTO " + type.pp() + " " + id + "( )\n";
+
+      return s;
+    }
+
+    @java.lang.Override
+    public TP2.ASD.Function.RetFunction toIR() throws TypeException {
+      return null;
+    }
+  }
+
+  static public class Func extends Function {
+    public Type type;
+    public String id;
+    public Expression expr;
+    public Block blk;
+
+    public Func(Type t, String s, Expression e, Block b) {
+      this.type = t;
+      this.id = s;
+      this.expr = e;
+      this.blk = b;
+    }
+
+    @java.lang.Override
+    public String pp() {
+      String s ="";
+      s = "FUNC " + this.type.pp() + " "
+              + this.id;
+      if(this.expr != null)
+        s += "(" + this.expr.pp() + ")\n";
+      else
+        s += "()\n";
+      s += this.blk.pp();
+      return s;
+    }
+
+    @java.lang.Override
+    public TP2.ASD.Function.RetFunction toIR() throws TypeException {
+      Llvm.IR funcIR = new Llvm.IR(Llvm.empty(),Llvm.empty());
+      Llvm.Instruction fn;
+      if(this.expr != null)
+         fn = new Llvm.FuncImpl(this.type.toLlvmType(),this.id,this.expr.pp(),new ASD.Int().toLlvmType());
+      else
+         fn = new Llvm.FuncImpl(this.type.toLlvmType(),this.id,null,null);
+
+      funcIR.appendCode(fn);
+      funcIR.append(this.blk.toIr().ir);
+
+      return new RetFunction(funcIR,null,null);
+              //todo pas obligé de parametres
     }
   }
   // Warning: this is the type from VSL+, not the LLVM types!
@@ -528,6 +678,22 @@ public class ASD {
 
     public Llvm.Type toLlvmType() {
       return new Llvm.Int();
+    }
+  }
+
+  static class Void extends Type {
+    @java.lang.Override
+    public String pp() {
+      return "VOID";
+    }
+
+    public boolean equals(Object obj) {
+      return obj instanceof Void;
+    }
+
+    @java.lang.Override
+    public Llvm.Type toLlvmType() {
+      return new Llvm.Void();
     }
   }
 }

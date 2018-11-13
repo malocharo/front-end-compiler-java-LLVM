@@ -16,7 +16,8 @@ options {
 // TODO : other rules
 
 program returns [ASD.Program out]
-    : e=block EOF { $out = new ASD.Program($e.out); } // TODO : change when you extend the language
+    //: e=block EOF { $out = new ASD.Program($e.out); } // TODO : change when you extend the language
+    :f=function EOF { $out = new ASD.Program($f.out);}
     ;
 
 expression returns [ASD.Expression out]
@@ -39,19 +40,34 @@ expressionHprio returns [ASD.Expression out]
     | r = prim {$out = $r.out;}
     ;
 
+prototype returns [ASD.Function out]
+    :{ASD.Type t = null; ASD.Expression e = null;}
+    PROTO (VOID {t = new ASD.Void();} | INT {t = new ASD.Int();}) IDENT LP (e = expression)+ RP {$out = new ASD.Proto(t,$IDENT.text,$e.out);}
+    ;
+
+function returns [ASD.Func out]
+    :{ASD.Type t = null; ASD.Expression et = null;}
+    FUNC (VOID {t = new ASD.Void();} | INT {t = new ASD.Int();})+
+    IDENT LP (e = expression {et = $e.out;})? RP
+    b = block {$out = new ASD.Func(t,$IDENT.text,et,$b.out);}
+    ;
+
 instruction returns [ASD.Instruction out]
     : IDENT AFF e = expression { $out = new ASD.AffInstruction($e.out, $IDENT.text); }
     | RET e = expression { $out = new ASD.Ret(new ASD.Int(),$e.out);}
-    | {ASD.Instruction elseM = null;}
+    | {List<ASD.Instruction> elseInstList = null;}
     IF c = condition
-    THEN i = instruction
-    (ELSE ie = instruction {elseM = $ie.out;})?
-    FI {$out = new ASD.IfThenElse($c.out,$i.out,elseM);}
+    THEN {List<ASD.Instruction> thenInstList = new ArrayList<>();} (i = instruction {thenInstList.add($i.out);})*
+    (ELSE {elseInstList = new ArrayList<>();} (ie = instruction {elseInstList.add($ie.out);})*)?
+    FI {$out = new ASD.IfThenElse($c.out,thenInstList,elseInstList);}
+    | WHILE c = condition
+    DO  {List<ASD.Instruction> instList = new ArrayList<>();} (i = instruction {instList.add($i.out);})*
+    DONE {$out = new ASD.While($c.out,instList);}
     ;
 
 condition returns [ASD.Condition out]
     :{boolean t = false;}
-     (NOT {t = !t;} )? e = expression { $out = new ASD.Condition($e.out,t);}
+     (NOT {t = !t;} )* e = expression { $out = new ASD.Condition($e.out,t);}
     ;
 
 block returns [ASD.Block out]
@@ -72,6 +88,8 @@ prim returns [ASD.Expression out]
     | LP e = expression RP {$out = $e.out;}
     // TODO : that's all?
     ;
+
+
 varDecla returns [List<ASD.VarDecla> out]
     : INT {List<ASD.VarDecla> varList = new ArrayList<>();}
     (IDENT {varList.add(new ASD.VarDecla(new ASD.Int(), $IDENT.text)); } COMA)*
